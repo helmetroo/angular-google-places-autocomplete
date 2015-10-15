@@ -149,6 +149,33 @@ angular.module('google.places', [])
                         });
                     }
 
+                    function extractStreetAddress(place) {
+                        var streetNumber = '';
+                        var route = '';
+
+                        var nameSelects = {
+                            street_number: 'short_name',
+                            route: 'long_name'
+                        };
+
+                        for (var i = 0; i < place.address_components.length; i++) {
+                            var addressType = place.address_components[i].types[0];
+                            var val = place.address_components[i][nameSelects[addressType]];
+
+                            if(addressType === 'street_number') {
+                                streetNumber = val;
+                                continue;
+                            }
+
+                            if(addressType === 'route') {
+                                route = val;
+                                continue;
+                            }
+                        }
+
+                        return streetNumber + ' ' + route;
+                    }
+
                     function select() {
                         var prediction;
 
@@ -157,7 +184,7 @@ angular.module('google.places', [])
 
                         if (prediction.is_custom) {
                             $scope.$apply(function () {
-                                $scope.model = prediction.place;
+                                $scope.model = extractStreetAddress(prediction.place);
                                 $scope.$emit('g-places-autocomplete:select', prediction.place);
                                 $timeout(function () {
                                     controller.$viewChangeListeners.forEach(function (fn) { fn(); });
@@ -167,7 +194,7 @@ angular.module('google.places', [])
                             placesService.getDetails({ placeId: prediction.place_id }, function (place, status) {
                                 if (status == google.maps.places.PlacesServiceStatus.OK) {
                                     $scope.$apply(function () {
-                                        $scope.model = place;
+                                        $scope.model = extractStreetAddress(place);
                                         $scope.$emit('g-places-autocomplete:select', place);
                                         $timeout(function () {
                                             controller.$viewChangeListeners.forEach(function (fn) { fn(); });
